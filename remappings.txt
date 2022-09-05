@@ -1,0 +1,5 @@
+ds-test/=packages/foundry-ts/lib/solmate/lib/ds-test/src/
+forge-std/=packages/foundry-ts/lib/forge-std/src/
+@openzeppelin/=packages/foundry-ts/lib/openzeppelin-contracts/
+relayer-context-contracts/=packages/foundry-ts/lib/relayer-context-contracts/contracts/
+solmate/=packages/foundry-ts/lib/solmate/src/
