@@ -2,6 +2,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 //SPDX-License-Identifier: MIT
 import "forge-std/Test.sol";
+import "forge-std/console2.sol";
+
 import "../src/YourContract.sol";
 
 contract YourContractTest is Test {
@@ -9,18 +11,25 @@ contract YourContractTest is Test {
   YourContract yc;
 
   function setUp() public {
+    console.log("setUp:1 ");
     testNumber = 42;
-    console.log("testNumber: ", testNumber);
-    yc = new YourContract(0xa7055Ab674bb87029Bc59e02431ee8ca851Ad117);
+    yc = new YourContract("MyPurpose");
   }
 
-  function testSetPuprpose() public {
-    yc.setPurpose("MyPurpose");
-  }
-
-  function testFailSubtract43() public {
+  function testCheckPurpose() public {
+    console.log("testCheckPurpose: 3 ");
     string memory purpose = yc.purpose();
     console.log("purpose: ", purpose);
     assertEq(purpose, "MyPurpose");
+  }
+
+  function testSetPuprpose() public {
+    console.log("testSetPuprpose: 2 ");
+    uint256 balance = 1 ether;
+    console.log("balance: ", balance / 10**18);
+    yc.setPurpose("N");
+
+    // string memory purpose = yc.purpose();
+    // assertEq(purpose, "N");
   }
 }

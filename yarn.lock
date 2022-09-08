@@ -1716,7 +1716,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/eth-sig-util@npm:^4.0.0":
+"@metamask/eth-sig-util@npm:^4.0.0, @metamask/eth-sig-util@npm:^4.0.1":
   version: 4.0.1
   resolution: "@metamask/eth-sig-util@npm:4.0.1"
   dependencies:
@@ -2403,6 +2403,7 @@ __metadata:
   dependencies:
     "@ethersproject/providers": ^5.6.8
     "@gelatonetwork/relay-sdk": next
+    "@metamask/eth-sig-util": ^4.0.1
     "@next/eslint-plugin-next": ^12.1.6
     "@rainbow-me/rainbowkit": ^0.4.5
     "@tailwindcss/forms": ^0.5.2
@@ -2416,7 +2417,9 @@ __metadata:
     "@uniswap/sdk-core": ^3.0.1
     "@uniswap/v3-core": ^1.0.1
     "@uniswap/v3-sdk": ^3.8.3
+    ascii85: ^1.0.2
     autoprefixer: ^10.4.7
+    axios: ^0.27.2
     daisyui: ^2.15.2
     debug-eth-contract: ^0.0.4
     defender-relay-client: ^1.28.1
@@ -4720,6 +4723,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ascii85@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "ascii85@npm:1.0.2"
+  checksum: 5233fa3be9ef8cc0df8b761393a80689ed019e99c6af87830eb9029332b4150f4cb2dcc09755b5790ba4a00240e6d87f4c74a68b516b502a9eb7a73bf0211892
+  languageName: node
+  linkType: hard
+
 "asn1.js@npm:^5.2.0":
   version: 5.4.1
   resolution: "asn1.js@npm:5.4.1"
@@ -4945,7 +4955,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:0.27.2":
+"axios@npm:0.27.2, axios@npm:^0.27.2":
   version: 0.27.2
   resolution: "axios@npm:0.27.2"
   dependencies:

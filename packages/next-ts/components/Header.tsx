@@ -1,5 +1,3 @@
-
-
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 import NavigationTabs from "./NavigationTabs";
@@ -33,7 +31,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* navigatin menu tabs  */}
-        <NavigationTabs />
+        {/* <NavigationTabs /> */}
       </div>
     </>
   );

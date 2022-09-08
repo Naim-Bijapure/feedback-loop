@@ -3,6 +3,11 @@
 export const DEPLOY_CONTRACTS = [
   {
     contractName: "YourContract",
-    args: ["0x683913B3A32ada4F8100458A3E1675425BdAa7DF"],
+    args: ["cool man"],
+  },
+
+  {
+    contractName: "Feedback",
+    args: ["0x0fAb64624733a7020D332203568754EB1a37DB89"],
   },
 ];

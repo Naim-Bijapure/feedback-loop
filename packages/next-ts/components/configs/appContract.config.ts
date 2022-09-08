@@ -1,9 +1,8 @@
 import { getDefaultWallets } from "@rainbow-me/rainbowkit";
 import { Chain, chain, configureChains, createClient } from "wagmi";
-import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 
-import { YourContract__factory } from "../../contracts/contract-types";
+import { Feedback__factory, YourContract__factory } from "../../contracts/contract-types";
 import foundryContracts from "../../contracts/foundry_contracts.json";
 
 export type contractNameType = keyof typeof ContractsConfig;
@@ -13,6 +12,7 @@ export type contractNameType = keyof typeof ContractsConfig;
  * inside ContractsConfig
  * ---------------------*/
 export const ContractsConfig = {
+  Feedback: { factory: Feedback__factory, json: foundryContracts },
   YourContract: { factory: YourContract__factory, json: foundryContracts },
 } as const;
 

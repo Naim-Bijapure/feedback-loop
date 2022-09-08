@@ -16,9 +16,12 @@
   "dependencies": {
     "@ethersproject/providers": "^5.6.8",
     "@gelatonetwork/relay-sdk": "next",
+    "@metamask/eth-sig-util": "^4.0.1",
     "@rainbow-me/rainbowkit": "^0.4.5",
     "@tailwindcss/forms": "^0.5.2",
     "@tailwindcss/typography": "^0.5.2",
+    "ascii85": "^1.0.2",
+    "axios": "^0.27.2",
     "daisyui": "^2.15.2",
     "debug-eth-contract": "^0.0.4",
     "defender-relay-client": "^1.28.1",

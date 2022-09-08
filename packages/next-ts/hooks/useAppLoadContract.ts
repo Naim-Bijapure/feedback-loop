@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { useContract, useNetwork, useProvider, useSigner } from "wagmi";
 
 import { contractNameType, ContractsConfig } from "../components/configs/appContract.config";
+import { Feedback } from "../contracts/contract-types";
 
 interface IuseAppLoadContract {
   contractName: contractNameType;
@@ -14,9 +15,10 @@ interface IuseAppLoadContract {
 /** ----------------------
  * a hook to loads the app contracts from  ContractsConfig
  * ---------------------*/
-const useAppLoadContract = ({ contractName }: IuseAppLoadContract) => {
-  type factoryConnectType = typeof ContractsConfig[typeof contractName]["factory"]["connect"];
-  type contractType = NonNullable<ReturnType<factoryConnectType>>;
+const useAppLoadContract = <T>({ contractName }: IuseAppLoadContract) => {
+  // type factoryConnectType = typeof ContractsConfig[typeof contractName]["factory"]["connect"];
+  // type contractType = NonNullable<ReturnType<factoryConnectType>>;
+  type contractType = T;
 
   const { theme } = useTheme();
   const [contract, setContract] = useState<contractType>();
@@ -42,6 +44,7 @@ const useAppLoadContract = ({ contractName }: IuseAppLoadContract) => {
     try {
       const deployedCode = await provider?.getCode(contractInstance.address);
       if (deployedCode !== "0x") {
+        console.log("keys");
         setContract(contractInstance);
       }
 
@@ -52,7 +55,7 @@ const useAppLoadContract = ({ contractName }: IuseAppLoadContract) => {
           theme: theme as any,
         });
 
-        setContract(undefined);
+        setContract(contractInstance);
       }
     } catch (error) {
       console.log("error: ", error);
