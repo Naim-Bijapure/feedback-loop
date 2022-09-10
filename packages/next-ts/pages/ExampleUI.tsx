@@ -9,6 +9,7 @@ import useAppLoadContract from "../hooks/useAppLoadContract";
 import { useStore } from "../store/useStore";
 import { Transactor } from "../functions";
 import { parseEther } from "ethers/lib/utils";
+import { YourContract } from "../contracts/contract-types";
 
 const ExampleUI: NextPage = () => {
   const { address } = useAccount();
@@ -21,7 +22,7 @@ const ExampleUI: NextPage = () => {
 
   const { ethPrice } = state;
 
-  const YourContract = useAppLoadContract({
+  const YourContract = useAppLoadContract<YourContract>({
     contractName: "YourContract",
   });
 

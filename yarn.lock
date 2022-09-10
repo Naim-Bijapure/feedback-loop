@@ -2457,7 +2457,7 @@ __metadata:
     react-dom: 18.1.0
     react-hook-form: ^7.33.1
     react-icons: ^4.4.0
-    react-loader-spinner: ^5.1.5
+    react-loader-spinner: ^5.3.4
     react-toastify: ^9.0.4
     remove: ^0.1.5
     sass: ^1.52.2
@@ -17865,6 +17865,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-is@npm:^18.2.0":
+  version: 18.2.0
+  resolution: "react-is@npm:18.2.0"
+  checksum: e72d0ba81b5922759e4aff17e0252bd29988f9642ed817f56b25a3e217e13eea8a7f2322af99a06edb779da12d5d636e9fda473d620df9a3da0df2a74141d53e
+  languageName: node
+  linkType: hard
+
 "react-loader-spinner@npm:^5.1.5":
   version: 5.1.5
   resolution: "react-loader-spinner@npm:5.1.5"
@@ -17872,6 +17879,20 @@ __metadata:
     react: ^16.0.0 || ^17.0.0 || ^18.0.0
     react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
   checksum: 2e5dd2beca5338ab9b7b9b33a8a2364ee5296d8aa32f3a7b2c82b4471e55e7768004c97d30ea9d20fd35a13aa625d24b38e960ad4ca0382d7d6eece14af5f4f5
+  languageName: node
+  linkType: hard
+
+"react-loader-spinner@npm:^5.3.4":
+  version: 5.3.4
+  resolution: "react-loader-spinner@npm:5.3.4"
+  dependencies:
+    react-is: ^18.2.0
+    styled-components: ^5.3.5
+    styled-tools: ^1.7.2
+  peerDependencies:
+    react: ^16.0.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
+  checksum: 429ee74233b2a225164bd77cce94459c20443411248e00604a21752fabf31a36749cc4d52c2a2cf194b98b37c543e0cbb9b76a0e49188acd1f17087035544ca6
   languageName: node
   linkType: hard
 
@@ -20159,7 +20180,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"styled-components@npm:^5.3.3":
+"styled-components@npm:^5.3.3, styled-components@npm:^5.3.5":
   version: 5.3.5
   resolution: "styled-components@npm:5.3.5"
   dependencies:
@@ -20192,6 +20213,13 @@ __metadata:
     babel-plugin-macros:
       optional: true
   checksum: 86d55819ebeabd283a574d2f44f7d3f8fa6b8c28fa41687ece161bf1e910e04965611618921d8f5cd33dc6dae1033b926a70421ae5ea045440a9861edc3e0d87
+  languageName: node
+  linkType: hard
+
+"styled-tools@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "styled-tools@npm:1.7.2"
+  checksum: 00cc1796085589b8d95d5a4183806d45b1d332fbc1dcf19922b01b81bd871c5a499fce64e82bb63bbead5bb8fe317f60a6e91c2fe01bf1ed79f5953977a05065
   languageName: node
   linkType: hard
 

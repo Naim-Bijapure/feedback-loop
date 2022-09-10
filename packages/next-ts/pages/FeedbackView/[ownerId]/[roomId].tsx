@@ -1,15 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import ascii85 from "ascii85";
 import axios from "axios";
+import { ethers } from "ethers";
 import { useRouter } from "next/router";
 import { ReactElement, useEffect, useState } from "react";
 import Blockies from "react-blockies";
 import { FiShare2, FiLock } from "react-icons/fi";
-import { useAccount } from "wagmi";
+import { Blocks, Puff, ThreeDots } from "react-loader-spinner";
+import { useAccount, useNetwork } from "wagmi";
+import { Sleep } from "../../../configs";
 
+import { Feedback__factory } from "../../../contracts/contract-types";
 import { Feedback, FeedbackDataEventFilter } from "../../../contracts/contract-types/Feedback";
+import foundryContracts from "../../../contracts/foundry_contracts.json";
 import useAppLoadContract from "../../../hooks/useAppLoadContract";
 import useCopyToClipboard from "../../../hooks/useCopyToClipboard";
 import { roomDataType, RoomFeedbacksType } from "../../../types";
+
 // import Blockie from "../../../components/EthComponents/Blockie";
 
 export default function RoomIdPage(): ReactElement {
@@ -22,46 +29,25 @@ export default function RoomIdPage(): ReactElement {
   });
 
   // f-local states
-  const [roomFeedbacks, setRoomFeedbacks] = useState<RoomFeedbacksType[]>();
+  const [roomFeedbacks, setRoomFeedbacks] = useState<RoomFeedbacksType[]>([]);
   const [currentRoom, setCurrentRoom] = useState<roomDataType>();
+  const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState<boolean>(false);
+  const [toDecryptionFeedback, setToDecryptionFeedback] = useState<any>({});
+  const [toggle, setToggle] = useState(false);
+  const [isRoomLoading, setIsRoomLoading] = useState(true);
+  const [isCopied, setIsCopied] = useState(false);
 
   // f-wagmi hooks
   const { address } = useAccount();
+  const { chain } = useNetwork();
 
   // f-custom hooks
   const [value, copy] = useCopyToClipboard();
 
   // f-methods
   const loadRoomsData: () => any = async () => {
-    const roomFeedbackFilter = feedBackContract?.filters.FeedbackData();
-    const roomFeedbackQueryData = await feedBackContract?.queryFilter(roomFeedbackFilter as FeedbackDataEventFilter);
-    console.log("roomFeedbackQueryData: ", roomFeedbackQueryData);
-    const roomFeedbacksData = roomFeedbackQueryData
-      ?.map((data) => {
-        return {
-          ownerAddress: data.args["ownerAddress"],
-          roomId: data.args["roomId"],
-          ipfsURL: data.args["ipfsURL"],
-        };
-      })
-      .filter((data) => data.ownerAddress === address && data.roomId === roomId);
-
-    console.log("roomFeedbacksData: ", roomFeedbacksData);
-    if (roomFeedbacksData) {
-      const finalRoomData = await Promise.all(
-        roomFeedbacksData.map(async ({ ownerAddress, ipfsURL, roomId }) => {
-          const ipfsRoomData = await axios.get(`https://ipfs.io/ipfs/${ipfsURL}/userFeedback.json`);
-          console.log("ipfsRoomData: ", ipfsRoomData.data);
-          const encryptedData: { encryptedData: string } = { ...ipfsRoomData.data };
-          console.log("encryptedData: ", encryptedData);
-          return { ownerAddress, ...encryptedData, roomId };
-        })
-      );
-
-      console.log("finalRoomData: ", finalRoomData);
-      setRoomFeedbacks(finalRoomData);
-    }
-
+    // load room data
+    setIsRoomLoading(true);
     const roomsFilter = feedBackContract?.filters.FeedbackRooms();
     const roomsQueryData = await feedBackContract?.queryFilter(roomsFilter as FeedbackDataEventFilter);
     const roomsData = roomsQueryData?.map((data) => {
@@ -83,17 +69,45 @@ export default function RoomIdPage(): ReactElement {
       );
 
       const selectRoomData = finalRoomData.find((data) => data.roomId === roomId);
-      console.log("selectRoomData: ", selectRoomData);
       setCurrentRoom(selectRoomData);
+      setIsRoomLoading(false);
+    }
+
+    // LOAD ROOM FEEDBACKS DATA
+    const roomFeedbackFilter = feedBackContract?.filters.FeedbackData();
+    const roomFeedbackQueryData = await feedBackContract?.queryFilter(roomFeedbackFilter as FeedbackDataEventFilter);
+    const roomFeedbacksData = roomFeedbackQueryData
+      ?.map((data) => {
+        return {
+          ownerAddress: data.args["ownerAddress"],
+          roomId: data.args["roomId"],
+          ipfsURL: data.args["ipfsURL"],
+        };
+      })
+      .filter((data) => data.ownerAddress === address && data.roomId === roomId);
+
+    if (roomFeedbacksData && roomFeedbacksData?.length > 0) {
+      setIsLoadingFeedbacks(true);
+
+      const finalRoomData = roomFeedbacksData.map(({ ownerAddress, ipfsURL, roomId }) => {
+        return { ownerAddress, ipfsURL, roomId };
+      });
+
+      // @ts-ignore
+      // setRoomFeedbacks(finalRoomData.map((data) => data.status === "fulfilled" && data.value));
+      setRoomFeedbacks(finalRoomData);
+      setIsLoadingFeedbacks(false);
     }
   };
 
-  const onDecrypt: (encryptedData: string, selectedIndex: number) => Promise<any> = async (
-    encryptedData,
-    selectedIndex
-  ) => {
-    console.log("selectedIndex: ", selectedIndex);
-    const encryptedDataBuffer = Buffer.from(encryptedData, "base64");
+  const onDecrypt: (ipfsURL: string, selectedIndex: number) => Promise<any> = async (ipfsURL, selectedIndex) => {
+    setToDecryptionFeedback({ [selectedIndex]: true });
+
+    const ipfsRoomData = await axios.get(`https://ipfs.io/ipfs/${ipfsURL}/userFeedback.json`);
+    const encryptedData = ipfsRoomData.data["encryptedData"];
+    console.log("encryptedData: ", encryptedData);
+
+    const encryptedDataBuffer = Buffer.from(encryptedData as string, "base64");
 
     // Reconstructing the original object outputed by encryption
     const structuredData = {
@@ -104,8 +118,6 @@ export default function RoomIdPage(): ReactElement {
     };
     // Convert data to hex string required by MetaMask
     const ct = `0x${Buffer.from(JSON.stringify(structuredData), "utf8").toString("hex")}`;
-    // Send request to MetaMask to decrypt the ciphertext
-    // Once again application must have acces to the account
     // @ts-ignore
     const decrypt = await window.ethereum.request({
       // @ts-ignore
@@ -115,7 +127,6 @@ export default function RoomIdPage(): ReactElement {
     });
 
     const decodedValue = ascii85.decode(decrypt);
-    // console.log("decodedValue: ", decodedValue.toString());
 
     const updatedRoomFeedback = roomFeedbacks?.map((data, index) => {
       if (selectedIndex === index) {
@@ -124,13 +135,33 @@ export default function RoomIdPage(): ReactElement {
       return data;
     });
 
-    console.log("updatedRoomFeedback: ", updatedRoomFeedback);
     setRoomFeedbacks(updatedRoomFeedback);
   };
 
+  const roomFeedBackListener: () => any = async () => {
+    feedBackContract?.on("FeedbackData", (_ownerAddress, _roomId, ipfsURL) => {
+      console.log("_ownerAddress, _roomId, ipfsURL: ", _ownerAddress, _roomId, ipfsURL);
+      setToggle((preToggle) => !preToggle);
+    });
+  };
+
+  const onCopy: (roomId: string) => any = async (roomId: string) => {
+    setIsCopied(true);
+    await Sleep(1000);
+    await copy(`${window.location.href}FeedbackWrite/${address}/${roomId}`);
+    setIsCopied(false);
+  };
+
+  // f-useEffect hooks
   useEffect(() => {
     if (feedBackContract) {
       void loadRoomsData();
+    }
+  }, [feedBackContract, toggle]);
+
+  useEffect(() => {
+    if (feedBackContract) {
+      void roomFeedBackListener();
     }
   }, [feedBackContract]);
 
@@ -169,8 +200,26 @@ export default function RoomIdPage(): ReactElement {
                                 <div className="flex flex-col items-center justify-center">
                                   <button
                                     className="btn btn-primary btn-outline"
-                                    onClick={(): any => onDecrypt(data?.encryptedData, index)}>
-                                    <FiLock size={23} />
+                                    onClick={(): any => onDecrypt(data?.ipfsURL as string, index)}
+                                    disabled={toDecryptionFeedback[index] === true}>
+                                    {index in toDecryptionFeedback === false && (
+                                      <>
+                                        <FiLock size={23} />
+                                      </>
+                                    )}
+
+                                    {toDecryptionFeedback && toDecryptionFeedback[index] === true && (
+                                      <>
+                                        <Blocks
+                                          visible={true}
+                                          height="30"
+                                          width="30"
+                                          ariaLabel="blocks-loading"
+                                          wrapperStyle={{}}
+                                          wrapperClass="blocks-wrapper"
+                                        />
+                                      </>
+                                    )}
                                   </button>
                                   <div className="mt-1 text-xs text-info opacity-70">Decrypt feedback</div>
                                 </div>
@@ -181,16 +230,66 @@ export default function RoomIdPage(): ReactElement {
                       })}
                     </div>
                   )}
+
+                  {roomFeedbacks?.length === 0 && isLoadingFeedbacks === false && (
+                    <div className="p-10 text-center border-2 rounded-xl">
+                      <div className="opacity-70">No feedbacks !</div>
+                    </div>
+                  )}
+
+                  {isLoadingFeedbacks && (
+                    <div className="flex flex-col items-center justify-center p-10 text-center border-2 rounded-xl">
+                      <div>
+                        <Puff
+                          height="80"
+                          width="80"
+                          color="#4fa94d"
+                          ariaLabel="puff-loading"
+                          wrapperStyle={{}}
+                          wrapperClass=""
+                          visible={true}
+                        />
+                      </div>
+
+                      <div className="mt-1 opacity-50">Wait loading feedbacks...</div>
+                    </div>
+                  )}
                 </div>
+
                 <div className="justify-end card-actions">
-                  <button
-                    className="btn btn-primary btn-outline"
-                    onClick={(): any => copy(`${window.location.origin}/FeedbackWrite/${address}/${roomId}`)}>
-                    Share room link <FiShare2 size={25} />
+                  <button className="btn btn-primary btn-outline" onClick={(): any => onCopy(roomId as string)}>
+                    {Boolean(isCopied) === false && (
+                      <>
+                        Share room link <FiShare2 size={25} />
+                      </>
+                    )}
+                    {Boolean(isCopied) === true && <>Copied !</>}
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {isRoomLoading && chain !== undefined && (
+          <div className="flex flex-col items-center w-full mt-16">
+            <ThreeDots
+              height="80"
+              width="80"
+              radius="9"
+              color="#4fa94d"
+              ariaLabel="three-dots-loading"
+              wrapperStyle={{}}
+              // wrapperClassName=""
+              visible={true}
+            />
+            <div className="text-xs text-info">Loading room..</div>
+          </div>
+        )}
+
+        {chain === undefined && (
+          <div className="flex flex-col items-center w-full mt-16">
+            <div className="p-10 border-2 rounded-xl opacity-70">Please connect to wallet to send feedback</div>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import "@rainbow-me/rainbowkit/styles.css";
-import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+// import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import "react-toastify/dist/ReactToastify.css";
 
 import { ThemeProvider } from "next-themes";

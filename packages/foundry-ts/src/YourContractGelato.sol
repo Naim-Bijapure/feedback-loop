@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 import { RelayerContext } from "relayer-context-contracts/RelayerContext.sol";
 
-contract YourContract is RelayerContext {
+contract YourContractGelato is RelayerContext {
   event SetPurpose(address sender, string purpose);
 
   mapping(address => uint256) public balance;

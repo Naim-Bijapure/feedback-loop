@@ -159,9 +159,11 @@ export default function PocPage(): ReactElement {
     const decrypt = await window.ethereum.request({
       // @ts-ignore
       method: "eth_decrypt",
+      // @ts-ignore
       params: [ct, account],
     });
     // Decode the base85 to final bytes
+    // @ts-ignore
     return ascii85.decode(decrypt);
   }
 

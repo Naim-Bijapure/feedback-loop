@@ -20,11 +20,11 @@ const StoreProvider: React.FC<any> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
   const [state, dispatch] = useReducer(Reducer, initialState);
 
-  const { ethPrice, usdPrice } = useDexPrice();
+  // const { ethPrice, usdPrice } = useDexPrice();
 
-  useEffect(() => {
-    dispatch({ payload: { ethPrice } }); // <---- eg: dispatch global states with payload and state properties
-  }, [ethPrice]);
+  // useEffect(() => {
+  // dispatch({ payload: { ethPrice } }); // <---- eg: dispatch global states with payload and state properties
+  // }, [ethPrice]);
 
   // default nextjs hydrtion issue managed
   useEffect(() => setMounted(true), []); // at init only

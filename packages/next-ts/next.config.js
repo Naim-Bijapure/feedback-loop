@@ -7,10 +7,12 @@ require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 const nextConfig = {
   reactStrictMode: true,
   //   to temprory ignore eslint error on build
-  //   eslint: {
-  //     ignoreDuringBuilds: true,
-  //   },
-  strictMode: true,
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
+  strictMode: false,
+  ignoreBuildErrors: true,
+  ignoreDuringBuilds: true,
 };
 
 module.exports = nextConfig;

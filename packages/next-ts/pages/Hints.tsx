@@ -10,7 +10,8 @@ import Address from "../components/EthComponents/Address";
 import AddressInput from "../components/EthComponents/AddressInput";
 
 const Help: NextPage = () => {
-  const { data: accountData, isLoading } = useAccount();
+  const { address } = useAccount();
+  const accountData = { address };
   const { data } = useBalance({ addressOrName: accountData?.address });
   return (
     <>

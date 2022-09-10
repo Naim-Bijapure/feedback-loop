@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel:deploy": "vercel deploy",
+    "vercel:deploy-old": "vercel deploy",
+    "vercel:deploy": "vercel build && vercel deploy --prebuilt",
     "vercel": "vercel",
     "build:DEC": "yarn shx cp -rf components/DebugContract build-DEC && yarn build:tailwind",
     "build:tailwind": "postcss styles/globals.scss -o build-DEC/styles/index.css"
@@ -39,7 +40,7 @@
     "react-dom": "18.1.0",
     "react-hook-form": "^7.33.1",
     "react-icons": "^4.4.0",
-    "react-loader-spinner": "^5.1.5",
+    "react-loader-spinner": "^5.3.4",
     "react-toastify": "^9.0.4",
     "remove": "^0.1.5",
     "sass": "^1.52.2",

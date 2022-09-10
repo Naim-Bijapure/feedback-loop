@@ -1,13 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+import { GelatoRelaySDK } from "@gelatonetwork/relay-sdk";
 import axios from "axios";
-import { ethers } from "ethers";
+import { ethers, PopulatedTransaction } from "ethers";
 import type { NextPage } from "next";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FiShare2 } from "react-icons/fi";
+import { TailSpin, Watch } from "react-loader-spinner";
 import { useAccount, useBalance, useNetwork, useProvider, useSigner } from "wagmi";
-import { Web3Storage } from "web3.storage";
-import { client } from "../configs";
+import { Sleep } from "../components/DebugContract/configs/utils";
 
+import { client, FEE_TOKEN } from "../configs";
 import { Feedback } from "../contracts/contract-types";
 import { FeedbackDataEventFilter } from "../contracts/contract-types/Feedback";
 import foundryContracts from "../contracts/foundry_contracts.json";
@@ -29,11 +32,15 @@ const Home: NextPage = () => {
   });
 
   // f-local states
-  const [roomsData, setRoomsData] = useState<roomDataType[]>();
+  const [roomsData, setRoomsData] = useState<roomDataType[]>([]);
   const [roomName, setRoomName] = useState("");
   const [roomDescription, setRoomDescription] = useState("");
   const [toggle, setToggle] = useState(false);
   const [isFeesPaid, setIsFeesPaid] = useState(false);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isUploadingIPFS, setIsUploadingIPFS] = useState(false);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+  const [isCopied, setIsCopied] = useState({});
 
   const roomsDataRef = useRef<roomDataType[]>();
 
@@ -51,7 +58,7 @@ const Home: NextPage = () => {
   const loadRoomsData: () => any = async () => {
     const roomsFilter = feedBackContract?.filters.FeedbackRooms();
     const roomsQueryData = await feedBackContract?.queryFilter(roomsFilter as FeedbackDataEventFilter);
-    const roomsData = roomsQueryData?.map((data) => {
+    const roomsDataFiltered = roomsQueryData?.map((data) => {
       return {
         ownerAddress: data.args["ownerAddress"],
         roomId: data.args["roomId"],
@@ -59,10 +66,12 @@ const Home: NextPage = () => {
         publicKey: data.args["publicKey"],
       };
     });
+    console.log("roomsData: ", roomsDataFiltered);
 
-    if (roomsData) {
+    if (roomsDataFiltered && roomsDataFiltered.length > 0) {
+      setIsLoadingRooms(true);
       const finalRoomData = await Promise.all(
-        roomsData.map(async ({ ownerAddress, publicKey, roomContent, roomId }) => {
+        roomsDataFiltered.map(async ({ ownerAddress, publicKey, roomContent, roomId }) => {
           const ipfsRoomData = await axios.get(`https://ipfs.io/ipfs/${roomContent}/roomContent.json`);
           const fetchedData = { ...ipfsRoomData.data };
           return { ownerAddress, publicKey, roomContent: fetchedData, roomId };
@@ -70,16 +79,20 @@ const Home: NextPage = () => {
       );
 
       console.log("finalRoomData: ", finalRoomData);
+      setIsLoadingRooms(false);
       setRoomsData(finalRoomData);
     }
   };
 
   const onCreateRoom: () => any = async () => {
+    setIsCreatingRoom(true);
+    setIsUploadingIPFS(true);
     const roomData = { roomName, roomDescription };
     const blob = new Blob([JSON.stringify(roomData)], { type: "application/json" });
     const fileData = new File([blob], "roomContent.json");
     const cid = await client.put([fileData]);
     console.log("stored room content  with cid:", cid);
+    setIsUploadingIPFS(false);
 
     // @ts-ignore
     const keyB64 = (await window.ethereum.request({
@@ -93,16 +106,45 @@ const Home: NextPage = () => {
     console.log("publicKey: ", publicKey);
 
     const roomId = Date.now();
-    console.log("roomId: ", roomId);
 
-    const tx = await feedBackContract?.createRoom(address as string, String(roomId), cid, publicKey);
-    const rcpt = await tx?.wait();
-    // console.log("rcpt: ", rcpt);
+    // const tx = await feedBackContract?.createRoom(address as string, String(roomId), cid, publicKey);
+    // const rcpt = await tx?.wait();
+
+    const { data: populateTxData } = (await feedBackContract?.populateTransaction.createRoom(
+      address as string,
+      String(roomId),
+      cid,
+      publicKey
+    )) as PopulatedTransaction;
+
+    // populate relay request
+    const request = {
+      chainId: provider.network.chainId,
+      target: feedBackContract?.address,
+      data: populateTxData,
+      feeToken: FEE_TOKEN,
+    };
+
+    // @ts-ignore
+    const relayResponse = await GelatoRelaySDK.relayWithSyncFee(request);
+    console.log("relayResponse: ", relayResponse);
+
     setRoomName("");
     setRoomDescription("");
-    // window.location.reload();
 
-    setToggle(!toggle);
+    if (roomsData.length > 0) {
+      // fetching created ipfs data to cache locally
+      const ipfsRoomData = await axios.get(`https://ipfs.io/ipfs/${cid}/roomContent.json`);
+      console.log("ipfsRoomData: ", ipfsRoomData.data);
+
+      setRoomsData([
+        ...roomsData,
+        { ownerAddress: address as string, publicKey, roomContent: roomData, roomId: String(roomId) },
+      ]);
+    }
+
+    setIsCreatingRoom(false);
+    // await loadRoomsData();
   };
 
   const getFeesStatus: () => any = async () => {
@@ -119,26 +161,45 @@ const Home: NextPage = () => {
     window.location.reload();
   };
 
+  const onCopy: (roomId: string) => any = async (roomId: string) => {
+    setIsCopied({ [roomId]: true });
+    await Sleep(1000);
+    await copy(`${window.location.href}FeedbackWrite/${address}/${roomId}`);
+    setIsCopied({ [roomId]: false });
+  };
+
   // f-useEfects
   useEffect(() => {
     if (feedBackContract) {
       void loadRoomsData();
       void getFeesStatus();
     }
+  }, [feedBackContract]);
+
+  useEffect(() => {
+    if (feedBackContract) {
+      // void loadRoomsData();
+    }
   }, [feedBackContract, toggle]);
+
+  // useEffect(() => {
+  //   if (feedBackContract) {
+  //     void createRoomListener();
+  //   }
+  // }, [feedBackContract]);
 
   return (
     <>
       {isFeesPaid === false && (
         <div className="flex flex-col items-center justify-center w-full text-center h-[80vh] ">
           <button className="m-2 btn btn-primary" onClick={onFundContract}>
-            Pay 0.25 eth to join
+            Pay 0.10 eth to join
           </button>
         </div>
       )}
       <div className="flex flex-col items-center justify-center w-full xl:flex-row xl:items-start xl:justify-start">
         {isFeesPaid && (
-          <div className="flex flex-col m-2 w-[50%] xl:w-[30%]">
+          <div className="flex flex-col m-2 w-[50%] xl:w-[30%]  ">
             <input
               type="text"
               className="mt-1 input input-primary"
@@ -156,35 +217,77 @@ const Home: NextPage = () => {
               rows={10}
             />
 
-            <button className="m-2 btn btn-primary" onClick={onCreateRoom} disabled={roomName === ""}>
-              Create room
+            <button
+              className="m-2 btn btn-primary"
+              onClick={onCreateRoom}
+              disabled={roomName === "" || roomDescription === "" || isCreatingRoom === true}>
+              {isCreatingRoom === false && <span>Create room</span>}
+              {isUploadingIPFS && <span>Uploading to ipfs</span>}
+              {isCreatingRoom && isUploadingIPFS === false && <span>Preparing room</span>}
+              {isCreatingRoom && (
+                <>
+                  <span>
+                    <TailSpin
+                      height="30"
+                      width="30"
+                      color="#4fa94d"
+                      ariaLabel="tail-spin-loading"
+                      radius="1"
+                      wrapperStyle={{}}
+                      wrapperClass="mx-2"
+                      visible={true}
+                    />
+                  </span>
+                </>
+              )}
             </button>
           </div>
         )}
 
         <div className="w-[70%]">
-          {roomsData !== undefined && roomsData?.length !== 0 && (
+          {isLoadingRooms === true && (
+            <div className="flex flex-col items-center justify-center mt-10">
+              <Watch
+                height="80"
+                width="80"
+                radius="48"
+                color="#4fa94d"
+                ariaLabel="watch-loading"
+                wrapperStyle={{}}
+                // wrapperClassName=""
+                visible={true}
+              />
+              <div className="mt-2 opacity-70 text-info">Hold on at first rooms takes time to load !</div>
+            </div>
+          )}
+
+          {roomsData !== undefined && roomsData?.length !== 0 && isLoadingRooms === false && (
             <div className="flex flex-col items-center">
-              {roomsData.map((data, index) => {
-                return (
-                  <div key={index} className="m-2 border-2 card w-[80%] bg--base-300 ">
-                    <div className="card-body">
-                      <h2 className="card-title">{data.roomContent.roomName}</h2>
-                      <p>{data.roomContent.roomDescription}</p>
-                      <div className="justify-end card-actions">
-                        <button
-                          className="btn btn-primary btn-outline"
-                          onClick={(): any => copy(`${window.location.href}FeedbackWrite/${address}/${data.roomId}`)}>
-                          Share room link <FiShare2 size={25} />
-                        </button>
-                        <Link href={`/FeedbackView/${address}/${data.roomId}`}>
-                          <button className="btn btn-primary">Open</button>
-                        </Link>
+              {roomsData
+                .sort((dataA, dataB) => Number(dataB.roomId) - Number(dataA.roomId))
+                .map((data, index) => {
+                  return (
+                    <div key={index} className="m-2 border-2 card w-[80%] bg--base-300 ">
+                      <div className="card-body">
+                        <h2 className="card-title">{data.roomContent.roomName}</h2>
+                        <p>{data.roomContent.roomDescription}</p>
+                        <div className="justify-end card-actions">
+                          <button className="btn btn-primary btn-outline" onClick={(): any => onCopy(data.roomId)}>
+                            {Boolean(isCopied[data.roomId]) === false && (
+                              <>
+                                Share room link <FiShare2 size={25} />
+                              </>
+                            )}
+                            {Boolean(isCopied[data.roomId]) === true && <>Copied !</>}
+                          </button>
+                          <Link href={`/FeedbackView/${address}/${data.roomId}`}>
+                            <button className="btn btn-primary">Open</button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
 

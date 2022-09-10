@@ -34,7 +34,7 @@ const useAppLoadContract = <T>({ contractName }: IuseAppLoadContract) => {
       ? ContractsConfig[contractName]["json"][chainId]["contracts"][contractName]["address"]
       : ethers.constants.AddressZero;
 
-  const contractInstance = useContract<contractType>({
+  const contractInstance: any = useContract<contractType>({
     addressOrName: contractAddress,
     contractInterface: ContractsConfig[contractName].factory.abi,
     signerOrProvider: signerData,
@@ -42,9 +42,8 @@ const useAppLoadContract = <T>({ contractName }: IuseAppLoadContract) => {
 
   const checkDeplyedContracState = async () => {
     try {
-      const deployedCode = await provider?.getCode(contractInstance.address);
+      const deployedCode = await provider?.getCode(contractInstance.address as string);
       if (deployedCode !== "0x") {
-        console.log("keys");
         setContract(contractInstance);
       }
 

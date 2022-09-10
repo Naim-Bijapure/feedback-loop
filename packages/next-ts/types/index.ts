@@ -9,5 +9,6 @@ export type RoomFeedbacksType = {
   ownerAddress: string;
   userFeedback?: string;
   roomId: string;
-  encryptedData: string;
+  encryptedData?: string;
+  ipfsURL?: string;
 };
