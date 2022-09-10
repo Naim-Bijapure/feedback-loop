@@ -1,6 +1,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { VscFeedback } from "react-icons/vsc";
 
-import NavigationTabs from "./NavigationTabs";
+// import NavigationTabs from "./NavigationTabs";
 import ThemeSwitch from "./ThemeSwitch";
 
 const Header: React.FC = () => {
@@ -9,7 +10,9 @@ const Header: React.FC = () => {
       <div className="flex flex-col items-center">
         <div className="navbar bg-base-100  shadow-sm">
           <div className="navbar-start">
-            <a className="text-sm normal-case btn btn-ghost lg:text-xl">Scaffold-eth-next</a>
+            <a className="text-sm normal-case btn btn-ghost lg:text-xl" href={window.location.origin}>
+              Feedback loop <VscFeedback size={30} color="green" />
+            </a>
           </div>
           <div className="hidden navbar-center lg:flex"></div>
           <div className="navbar-end">

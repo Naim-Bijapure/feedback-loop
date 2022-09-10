@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { FiShare2 } from "react-icons/fi";
 import { useAccount, useBalance, useNetwork, useProvider, useSigner } from "wagmi";
 import { Web3Storage } from "web3.storage";
+import { client } from "../configs";
 
 import { Feedback } from "../contracts/contract-types";
 import { FeedbackDataEventFilter } from "../contracts/contract-types/Feedback";
@@ -13,10 +14,6 @@ import foundryContracts from "../contracts/foundry_contracts.json";
 import useAppLoadContract from "../hooks/useAppLoadContract";
 import useCopyToClipboard from "../hooks/useCopyToClipboard";
 import { roomDataType } from "../types";
-
-const client = new Web3Storage({
-  token: process.env.NEXT_PUBLIC_TARGET_WEB3_STORAGE as string,
-});
 
 // type roomDataType = {
 //   ownerAddress: string;
@@ -176,8 +173,8 @@ const Home: NextPage = () => {
                       <p>{data.roomContent.roomDescription}</p>
                       <div className="justify-end card-actions">
                         <button
-                          className="btn btn-primary"
-                          onClick={(): any => copy(`${window.location.href}/FeedbackWrite/${address}/${data.roomId}`)}>
+                          className="btn btn-primary btn-outline"
+                          onClick={(): any => copy(`${window.location.href}FeedbackWrite/${address}/${data.roomId}`)}>
                           Share room link <FiShare2 size={25} />
                         </button>
                         <Link href={`/FeedbackView/${address}/${data.roomId}`}>
