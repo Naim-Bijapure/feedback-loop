@@ -8,8 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { FiShare2 } from "react-icons/fi";
 import { TailSpin, Watch } from "react-loader-spinner";
 import { useAccount, useBalance, useNetwork, useProvider, useSigner } from "wagmi";
-import { Sleep } from "../components/DebugContract/configs/utils";
 
+import { Sleep } from "../components/DebugContract/configs/utils";
 import { client, FEE_TOKEN } from "../configs";
 import { Feedback } from "../contracts/contract-types";
 import { FeedbackDataEventFilter } from "../contracts/contract-types/Feedback";
@@ -41,6 +41,7 @@ const Home: NextPage = () => {
   const [isUploadingIPFS, setIsUploadingIPFS] = useState(false);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [isCopied, setIsCopied] = useState({});
+  const [isPayingFees, setIsPayingFees] = useState(false);
 
   const roomsDataRef = useRef<roomDataType[]>();
 
@@ -58,14 +59,16 @@ const Home: NextPage = () => {
   const loadRoomsData: () => any = async () => {
     const roomsFilter = feedBackContract?.filters.FeedbackRooms();
     const roomsQueryData = await feedBackContract?.queryFilter(roomsFilter as FeedbackDataEventFilter);
-    const roomsDataFiltered = roomsQueryData?.map((data) => {
-      return {
-        ownerAddress: data.args["ownerAddress"],
-        roomId: data.args["roomId"],
-        roomContent: data.args["roomContent"],
-        publicKey: data.args["publicKey"],
-      };
-    });
+    const roomsDataFiltered = roomsQueryData
+      ?.map((data) => {
+        return {
+          ownerAddress: data.args["ownerAddress"],
+          roomId: data.args["roomId"],
+          roomContent: data.args["roomContent"],
+          publicKey: data.args["publicKey"],
+        };
+      })
+      .filter((data) => data.ownerAddress === address);
     console.log("roomsData: ", roomsDataFiltered);
 
     if (roomsDataFiltered && roomsDataFiltered.length > 0) {
@@ -148,23 +151,49 @@ const Home: NextPage = () => {
   };
 
   const getFeesStatus: () => any = async () => {
-    const feesPaid = await feedBackContract?.feesPaid(address as string);
-    setIsFeesPaid(feesPaid as boolean);
+    // localStorage.setItem("feesPaid", JSON.stringify({ address: true }));
+    const localFeesPaid = localStorage.getItem("feesPaid");
+    if (localFeesPaid !== null) {
+      const isFeesPaid = JSON.parse(localFeesPaid);
+      if (isFeesPaid[address as string]) {
+        setIsFeesPaid(isFeesPaid[address as string] as boolean);
+      } else {
+        const feesPaid = await feedBackContract?.feesPaid(address as string);
+        localStorage.setItem("feesPaid", JSON.stringify({ ...isFeesPaid, [address as string]: feesPaid }));
+
+        setIsFeesPaid(feesPaid as boolean);
+      }
+    } else {
+      const feesPaid = await feedBackContract?.feesPaid(address as string);
+      localStorage.setItem("feesPaid", JSON.stringify({ [address as string]: true }));
+
+      setIsFeesPaid(feesPaid as boolean);
+    }
   };
 
   const onFundContract: () => any = async () => {
+    setIsPayingFees(true);
     const chainId = chain?.id;
     const contractAddress = foundryContracts[chainId as number]["contracts"]["Feedback"]["address"];
     const tx = await signer?.sendTransaction({ to: contractAddress, value: ethers.utils.parseEther("0.10") });
     const rcpt = await tx?.wait();
-    console.log("rcpt: ", rcpt);
+
+    // setIsPayingFees(true);
+
+    const localFeesPaid = localStorage.getItem("feesPaid");
+    let previousFeesPaid;
+    if (localFeesPaid !== null) {
+      previousFeesPaid = JSON.parse(localFeesPaid);
+    }
+    localStorage.setItem("feesPaid", JSON.stringify({ ...previousFeesPaid, [address as string]: true }));
+    // console.log("rcpt: ", rcpt);
     window.location.reload();
   };
 
   const onCopy: (roomId: string) => any = async (roomId: string) => {
     setIsCopied({ [roomId]: true });
-    await Sleep(1000);
-    await copy(`${window.location.href}FeedbackWrite/${address}/${roomId}`);
+    await copy(`${window.location.origin}/FeedbackWrite/${address}/${roomId}`);
+    await Sleep(800);
     setIsCopied({ [roomId]: false });
   };
 
@@ -175,6 +204,10 @@ const Home: NextPage = () => {
       void getFeesStatus();
     }
   }, [feedBackContract]);
+
+  // useEffect(() => {
+  //   void getFeesStatus();
+  // }, []);
 
   useEffect(() => {
     if (feedBackContract) {
@@ -188,18 +221,42 @@ const Home: NextPage = () => {
   //   }
   // }, [feedBackContract]);
 
+  // const localFeesPaid = localStorage.getItem("feesPaid");
+  // console.log("localFeesPaid: ", localFeesPaid);
+
   return (
     <>
-      {isFeesPaid === false && (
+      {isFeesPaid === false && chain !== undefined && (
         <div className="flex flex-col items-center justify-center w-full text-center h-[80vh] ">
           <button className="m-2 btn btn-primary" onClick={onFundContract}>
-            Pay 0.10 eth to join
+            {isPayingFees === false && (
+              <>
+                <span>Pay 0.10 eth to join</span>
+              </>
+            )}
+
+            {isPayingFees === true && (
+              <>
+                <span>
+                  <TailSpin
+                    height="30"
+                    width="30"
+                    color="#4fa94d"
+                    ariaLabel="tail-spin-loading"
+                    radius="1"
+                    wrapperStyle={{}}
+                    wrapperClass=""
+                    visible={true}
+                  />
+                </span>
+              </>
+            )}
           </button>
         </div>
       )}
       <div className="flex flex-col items-center justify-center w-full xl:flex-row xl:items-start xl:justify-start">
         {isFeesPaid && (
-          <div className="flex flex-col m-2 w-[50%] xl:w-[30%]  ">
+          <div className="flex flex-col m-2  w-[50%] xl:w-[30%] xl:ml-12">
             <input
               type="text"
               className="mt-1 input input-primary"
@@ -261,7 +318,7 @@ const Home: NextPage = () => {
             </div>
           )}
 
-          {roomsData !== undefined && roomsData?.length !== 0 && isLoadingRooms === false && (
+          {roomsData !== undefined && roomsData?.length !== 0 && isLoadingRooms === false && isFeesPaid && (
             <div className="flex flex-col items-center">
               {roomsData
                 .sort((dataA, dataB) => Number(dataB.roomId) - Number(dataA.roomId))
@@ -291,7 +348,7 @@ const Home: NextPage = () => {
             </div>
           )}
 
-          {roomsData?.length === 0 && (
+          {roomsData?.length === 0 && chain !== undefined && isFeesPaid === true && (
             <div className="flex flex-col items-center mt-5 ">
               <div className="p-10 text-center border-2 w-[50%] rounded-xl">
                 <div>
@@ -302,6 +359,12 @@ const Home: NextPage = () => {
           )}
         </div>
       </div>
+
+      {chain === undefined && (
+        <div className="flex flex-col items-center w-full mt-16">
+          <div className="p-10 border-2 rounded-xl opacity-70">Please connect wallet to send feedback</div>
+        </div>
+      )}
     </>
   );
 };

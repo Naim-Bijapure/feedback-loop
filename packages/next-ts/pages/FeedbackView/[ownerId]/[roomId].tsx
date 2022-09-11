@@ -105,7 +105,6 @@ export default function RoomIdPage(): ReactElement {
 
     const ipfsRoomData = await axios.get(`https://ipfs.io/ipfs/${ipfsURL}/userFeedback.json`);
     const encryptedData = ipfsRoomData.data["encryptedData"];
-    console.log("encryptedData: ", encryptedData);
 
     const encryptedDataBuffer = Buffer.from(encryptedData as string, "base64");
 
@@ -140,15 +139,14 @@ export default function RoomIdPage(): ReactElement {
 
   const roomFeedBackListener: () => any = async () => {
     feedBackContract?.on("FeedbackData", (_ownerAddress, _roomId, ipfsURL) => {
-      console.log("_ownerAddress, _roomId, ipfsURL: ", _ownerAddress, _roomId, ipfsURL);
       setToggle((preToggle) => !preToggle);
     });
   };
 
   const onCopy: (roomId: string) => any = async (roomId: string) => {
     setIsCopied(true);
+    await copy(`${window.location.origin}/FeedbackWrite/${address}/${roomId}`);
     await Sleep(1000);
-    await copy(`${window.location.href}FeedbackWrite/${address}/${roomId}`);
     setIsCopied(false);
   };
 

@@ -12,6 +12,7 @@ const NotificationMsg = ({ closeToast, toastProps }: any) => (
   </>
 );
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const Transactor = async (tx: ContractTransactionType, argsData?: any, txData?: Overrides & { from?: string }) => {
   const executeTx: ContractTransaction = await tx.apply(this, [...argsData, txData !== undefined ? txData : null]);
 

@@ -158,12 +158,15 @@ export default function RoomIdPage(): ReactElement {
 
                 {isMsgSend && (
                   <div className="self-center  text-center">
-                    <span className="m-2 text-xs text-success">Feedback sent !</span>
+                    <span className="m-2 text-md text-success">Feedback sent !</span>
                   </div>
                 )}
               </div>
               <div className="justify-end card-actions">
-                <button className="btn btn-primary btn-outline" onClick={onSendFeedback}>
+                <button
+                  className="btn btn-primary btn-outline"
+                  onClick={onSendFeedback}
+                  disabled={Boolean(enteredFeedback) === false}>
                   {isSendingMessage === false && <RiSendPlaneLine size={30} />}
 
                   {isSendingMessage && (
@@ -212,7 +215,7 @@ export default function RoomIdPage(): ReactElement {
 
       {chain === undefined && (
         <div className="flex flex-col items-center w-full mt-16">
-          <div className="p-10 border-2 rounded-xl opacity-70">Please connect to wallet to send feedback</div>
+          <div className="p-10 border-2 rounded-xl opacity-70">Please connect wallet to send feedback</div>
         </div>
       )}
     </div>
